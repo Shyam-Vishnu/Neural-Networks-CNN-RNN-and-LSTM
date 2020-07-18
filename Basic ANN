@@ -1,0 +1,138 @@
+import numpy as np
+from random import randint
+from sklearn.utils import shuffle
+from sklearn.preprocessing import MinMaxScaler
+
+# Create 2 lists
+train_labels = []
+train_samples= []
+
+# Creating dataset.Simple logic
+for i in range(50):
+    random_younger = randint(13,64)
+    train_samples.append(random_younger)
+    train_labels.append(1)
+    
+    random_older = randint(65,100)
+    train_samples.append(random_older)
+    train_labels.append(0)
+    
+for i in range(1000):
+    random_younger = randint(13,64)
+    train_samples.append(random_younger)
+    train_labels.append(0)
+    
+    random_older = randint(65,100)
+    train_samples.append(random_older)
+    train_labels.append(1)    
+    
+    
+
+for i in train_samples:
+    print(i)
+
+# Since fit function expects data as numpy array
+train_labels = np.array(train_labels)
+train_samples = np.array(train_samples)
+train_lables, train_samples = shuffle(train_labels,train_samples)
+
+# Scaling the sample data
+scaler = MinMaxScaler(feature_range = (0,1))
+scaled_train_samples = scaler.fit_transform(train_samples.reshape(-1,1))
+
+for i in  scaled_train_samples:
+    print(i)
+
+# Neccessary Packages
+# Used to build the model
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Activation, Dense
+
+# Used when training the model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import categorical_crossentropy
+
+
+# If gpu is model, run code available
+
+# Building a Sequential model. It is a linearly built model. 
+# We pass in a list of layers
+# First Dense layer is 2nd layer overall. We specify input_shape there.
+# Otherwise we specify only units and activation
+
+# Final layer units = number of classes
+model = Sequential([
+    Dense(units = 16, input_shape = (1,), activation = 'relu'),
+    Dense(units = 32, activation = 'relu'),
+    Dense(units = 2, activation = 'softmax')
+])
+
+model.summary()
+
+# gets model in order and prepares for training
+model.compile(optimizer = Adam(learning_rate = 0.001), loss = 'sparse_categorical_crossentropy' , metrics = ['accuracy'])
+
+# Training the model
+model.fit(x = scaled_train_samples, y =train_labels, batch_size = 10, epochs = 30, shuffle = True, verbose = 2)
+
+# Training the model
+model.fit(x = scaled_train_samples, y =train_labels, batch_size = 10, validation_split = 0.1, epochs = 30, shuffle = True, verbose = 2)
+
+# Create test data
+# Creating dataset.Simple logic
+
+test_samples = []
+test_labels = []
+
+for i in range(10):
+    random_younger = randint(13,64)
+    test_samples.append(random_younger)
+    test_labels.append(1)
+    
+    random_older = randint(65,100)
+    test_samples.append(random_older)
+    test_labels.append(0)
+    
+for i in range(200):
+    random_younger = randint(13,64)
+    test_samples.append(random_younger)
+    test_labels.append(0)
+    
+    random_older = randint(65,100)
+    test_samples.append(random_older)
+    test_labels.append(1)    
+    
+    
+    
+# Since predict fucntion expects the same as fit function we conver data as numpy array
+test_labels = np.array(test_labels)
+test_samples = np.array(test_samples)
+test_lables, test_samples = shuffle(test_labels,test_samples)    
+
+# Scaling the sample data
+scaler = MinMaxScaler(feature_range = (0,1))
+scaled_test_samples = scaler.fit_transform(test_samples.reshape(-1,1))
+
+#Prediction
+predictions = model.predict(x = scaled_test_samples, batch_size = 10, verbose = 0)
+
+type(predictions)
+
+for i in predictions:
+    print(i)
+
+# To see only the most probable predictions
+rounded_predictions = np.argmax(predictions, axis =-1)
+print(rounded_predictions)
+
+model.save('First_ANN_saved')
+
+# from tensorfow.keras.models import load_model. Similar to sequential
+
+from tensorflow.keras.models import load_model
+loaded_model = load_model('First_ANN_saved')
+
+loaded_model.predict(x = scaled_test_samples, batch_size = 10, verbose = 0)
+
