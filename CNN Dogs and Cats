@@ -1,0 +1,107 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import Flatten, Dense, Activation, BatchNormalization, Conv2D, MaxPool2D
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import Accuracy
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import shutil
+import os
+import random
+import itertools
+import glob
+import matplotlib.pyplot as plt
+import warnings
+warnings.simplefilter(action = 'ignore' , category = FutureWarning)
+%matplotlib inline
+
+
+# Ogranise data into training, validation and test sets
+
+os.chdir('dog vs cat')
+
+#Enusring this path doesn't already exist. And the creating 6 folders.
+if os.path.isdir('train/dog') is False:
+    os.makedirs('train/dog')
+    os.makedirs('train/cat')
+    os.makedirs('test/dog')
+    os.makedirs('test/cat')
+    os.makedirs('valid/dog')
+    os.makedirs('valid/cat')
+    
+#Moving anything with the name cat and dog to their respective folders.    
+
+# Use glob.glob to get the file name in a folder. Specify the location
+# Gets out 500 sample file names
+# Moves these files
+# Give complete path in shutil
+# Assuming all pics are in dogs vs cat directory
+    for c in random.sample(glob.glob('cat*'),500):
+        shutil.move(c,'train/cat')
+    for c in random.sample(glob.glob('dog*'),500):
+        shutil.move(c,'train/dog')
+    for c in random.sample(glob.glob('cat*'),50):
+        shutil.move(c,'test/cat')
+    for c in random.sample(glob.glob('dog*'),50):
+        shutil.move(c,'test/dog')
+    for c in random.sample(glob.glob('cat*'),100):
+        shutil.move(c,'valid/cat')
+    for c in random.sample(glob.glob('dog*'),100):
+        shutil.move(c,'valid/cat')
+        
+        
+
+'''
+os.chdir('C:\\Users\\Shyam\\Desktop\\NN')
+os.getcwd()
+
+'''
+
+# Creating train, validation and test paths
+train_path = 'C:\\Users\\Shyam\Desktop\\NN\\dog vs cat\\train'
+test_path = 'C:\\Users\\Shyam\\Desktop\\NN\\dog vs cat\\test'
+validation_path = 'C:\\Users\\Shyam\\Desktop\\NN\\dog vs cat\\valid'
+
+# Create train, test and validation batches
+# Create batches in such a way they can be passed to fit function
+# Or use your own image data generator to build own images.
+# This basically creates new copies in different ways.
+train_batches = ImageDataGenerator(preprocessing_function = tf.keras.applications.vgg16.preprocess_input) \
+                .flow_from_directory(directory = train_path, target_size = (224,224), classes = ['cat','dog'], batch_size = 10)
+
+
+validation_batches = ImageDataGenerator(preprocessing_function = tf.keras.applications.vgg16.preprocess_input) \
+                .flow_from_directory(directory = validation_path, target_size = (224,224), classes = ['cat','dog'], batch_size = 10)
+
+
+test_batches = ImageDataGenerator(preprocessing_function = tf.keras.applications.vgg16.preprocess_input) \
+                .flow_from_directory(directory = test_path, target_size = (224,224), classes = ['cat','dog'], batch_size = 10, shuffle = False)
+
+# Building the CNN
+
+
+
+model = Sequential([ 
+        Conv2D(filters = 32, kernel_size = (3,3) ,activation = 'relu', padding = 'same' , input_shape = (224,224,3)),
+                     # The pooling layer decreases output by half
+        MaxPool2D(pool_size = (2,2) ,strides = 2),
+                     #This covolution layer takes out more features. Increasing Conv filters is common practice
+        Conv2D(filters = 64, kernel_size = (3,3) ,activation = 'relu', padding = 'same' ),
+        MaxPool2D(pool_size = (2,2) , strides = 2),
+        Flatten(),
+                     #Dense is always your final layer with softmax activation for classification 
+        Dense(units = 2 ,activation = 'softmax') 
+        ]
+)
+
+model.summary()
+
+model.compile(optimizer = Adam(learning_rate = 0.0001) , loss = 'categorical_crossentropy' , metrics = ['accuracy'])
+
+model.fit_generator(train_batches , validation_data = validation_batches , epochs = 10 , verbose = 2 )
+
+#Predicting
+model.predict(test_batches)
+
+# To get to know what eacg number corresponds to
+test_batches.class_indices
