@@ -1,2 +1,2 @@
-# NN
+# Learning Neural Networks
 Neural Networks
